@@ -117,6 +117,15 @@ function api(path) {
   return Promise.reject(new Error('Unknown path: ' + path));
 }
 
+function apiDelete(path) {
+  var cfg = getConfig();
+  if (!cfg) return Promise.reject(new Error('No config'));
+  var base = cfg.url.replace(/\/$/, '') + '/rest/v1';
+  var headers = supabaseHeaders(cfg);
+  return fetch(base + path, { method: 'DELETE', headers: headers })
+    .then(function(r) { if (!r.ok) throw new Error(r.status); });
+}
+
 function apiPost(path, body) {
   var cfg = getConfig();
   if (!cfg) return Promise.reject(new Error('No config'));
@@ -265,12 +274,26 @@ function EntryBody(props) {
 
 /* ─── Annotation Card ─── */
 function AnnotationCard(props) {
-  var a = props.ann;
+  var a = props.ann, onDelete = props.onDelete;
   var time = a.created_at ? new Date(a.created_at).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hour12: false }) : '';
-  return React.createElement('div', { className: 'ann-card' },
+  var _del = useState(false); var deleting = _del[0]; var setDeleting = _del[1];
+  function handleDelete() {
+    if (!confirm('删除这条批注？')) return;
+    setDeleting(true);
+    apiDelete('/ember_annotations?id=eq.' + a.id)
+      .then(function() { onDelete(a.id); })
+      .catch(function(e) { console.error(e); setDeleting(false); });
+  }
+  return React.createElement('div', { className: 'ann-card', style: { position: 'relative' } },
     React.createElement('div', { style: { fontStyle: 'italic', color: '#a89478', fontSize: '12px', lineHeight: 1.6, borderLeft: '2px solid #d4c4a8', paddingLeft: '10px', marginBottom: '8px' } }, '「' + (a.quote || '') + '」'),
     React.createElement('div', { style: { fontSize: '13px', color: '#3d2e1f', lineHeight: 1.7 } }, a.note || a.text),
-    React.createElement('div', { className: 'label', style: { marginTop: '6px' } }, 'IRIS · ' + time)
+    React.createElement('div', { style: { marginTop: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+      React.createElement('div', { className: 'label' }, 'MOLLY · ' + time),
+      React.createElement('button', {
+        onClick: handleDelete, disabled: deleting, className: 'clear-btn',
+        style: { fontSize: '10px', color: '#b86840' }
+      }, deleting ? '…' : '删除')
+    )
   );
 }
 
@@ -311,6 +334,10 @@ function EntryView(props) {
       });
   }
 
+  function removeAnnotation(id) {
+    setAnnotations(function(prev) { return prev.filter(function(a) { return a.id !== id; }); });
+  }
+
   return React.createElement('div', { style: { maxWidth: '560px', margin: '0 auto', padding: '20px 16px 120px' } },
     showBack && React.createElement('button', { onClick: onBack, className: 'btn', style: { marginBottom: '16px', padding: '6px 14px' } }, '← BACK'),
     React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' } },
@@ -329,7 +356,7 @@ function EntryView(props) {
     annotations.length > 0 && React.createElement('div', null,
       React.createElement('div', { style: { borderTop: '2px dashed #d4c4a8', marginBottom: '14px' } }),
       React.createElement('div', { className: 'label', style: { marginBottom: '10px' } }, annotations.length + ' ANNOTATION' + (annotations.length > 1 ? 'S' : '')),
-      annotations.map(function(a) { return React.createElement(AnnotationCard, { key: a.id, ann: a }); })
+      annotations.map(function(a) { return React.createElement(AnnotationCard, { key: a.id, ann: a, onDelete: removeAnnotation }); })
     ),
     React.createElement(AnnotationBar, {
       quote: quote, disabled: submitting, onSubmit: handleAnnotation,
