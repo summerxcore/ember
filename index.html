@@ -277,22 +277,74 @@ function AnnotationCard(props) {
   var a = props.ann, onDelete = props.onDelete;
   var time = a.created_at ? new Date(a.created_at).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hour12: false }) : '';
   var _del = useState(false); var deleting = _del[0]; var setDeleting = _del[1];
-  function handleDelete() {
-    if (!confirm('删除这条批注？')) return;
+  var _swiped = useState(false); var swiped = _swiped[0]; var setSwiped = _swiped[1];
+  var _confirming = useState(false); var confirming = _confirming[0]; var setConfirming = _confirming[1];
+  var touchStartX = useRef(0);
+  var touchStartY = useRef(0);
+
+  function handleTouchStart(e) {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  }
+  function handleTouchEnd(e) {
+    var dx = touchStartX.current - e.changedTouches[0].clientX;
+    var dy = Math.abs(touchStartY.current - e.changedTouches[0].clientY);
+    if (dx > 50 && dy < 30) setSwiped(true);
+    if (dx < -30) { setSwiped(false); setConfirming(false); }
+  }
+  function handleDeleteClick() {
+    if (!confirming) { setConfirming(true); return; }
     setDeleting(true);
     apiDelete('/ember_annotations?id=eq.' + a.id)
       .then(function() { onDelete(a.id); })
-      .catch(function(e) { console.error(e); setDeleting(false); });
+      .catch(function(e) { console.error(e); setDeleting(false); setConfirming(false); });
   }
-  return React.createElement('div', { className: 'ann-card', style: { position: 'relative' } },
-    React.createElement('div', { style: { fontStyle: 'italic', color: '#a89478', fontSize: '12px', lineHeight: 1.6, borderLeft: '2px solid #d4c4a8', paddingLeft: '10px', marginBottom: '8px' } }, '「' + (a.quote || '') + '」'),
-    React.createElement('div', { style: { fontSize: '13px', color: '#3d2e1f', lineHeight: 1.7 } }, a.note || a.text),
-    React.createElement('div', { style: { marginTop: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
-      React.createElement('div', { className: 'label' }, 'MOLLY · ' + time),
+  function handleCancel() { setSwiped(false); setConfirming(false); }
+
+  return React.createElement('div', {
+    style: { position: 'relative', overflow: 'hidden', marginBottom: '8px' }
+  },
+    /* Delete button behind */
+    React.createElement('div', {
+      style: {
+        position: 'absolute', right: 0, top: 0, bottom: 0,
+        display: 'flex', alignItems: 'stretch', gap: '1px'
+      }
+    },
       React.createElement('button', {
-        onClick: handleDelete, disabled: deleting, className: 'clear-btn',
-        style: { fontSize: '10px', color: '#b86840' }
-      }, deleting ? '…' : '删除')
+        onClick: handleCancel,
+        style: {
+          background: '#d4c4a8', border: 'none', color: '#a89478',
+          fontFamily: "'DotGothic16',monospace", fontSize: '9px',
+          letterSpacing: '2px', padding: '0 12px', cursor: 'pointer'
+        }
+      }, 'CANCEL'),
+      React.createElement('button', {
+        onClick: handleDeleteClick, disabled: deleting,
+        style: {
+          background: confirming ? '#8b2500' : '#b86840',
+          border: 'none', color: '#faf5e8',
+          fontFamily: "'DotGothic16',monospace", fontSize: '9px',
+          letterSpacing: '2px', padding: '0 16px', cursor: 'pointer',
+          transition: 'background 0.2s'
+        }
+      }, deleting ? '…' : confirming ? 'CONFIRM' : 'DELETE')
+    ),
+    /* Card content, slides left */
+    React.createElement('div', {
+      onTouchStart: handleTouchStart,
+      onTouchEnd: handleTouchEnd,
+      className: 'ann-card',
+      style: {
+        position: 'relative', marginBottom: 0,
+        transform: swiped ? 'translateX(-120px)' : 'translateX(0)',
+        transition: 'transform 0.25s cubic-bezier(.4,0,.2,1)',
+        cursor: 'grab'
+      }
+    },
+      React.createElement('div', { style: { fontStyle: 'italic', color: '#a89478', fontSize: '12px', lineHeight: 1.6, borderLeft: '2px solid #d4c4a8', paddingLeft: '10px', marginBottom: '8px' } }, '「' + (a.quote || '') + '」'),
+      React.createElement('div', { style: { fontSize: '13px', color: '#3d2e1f', lineHeight: 1.7 } }, a.note || a.text),
+      React.createElement('div', { className: 'label', style: { marginTop: '6px' } }, 'MOLLY · ' + time)
     )
   );
 }
