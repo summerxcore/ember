@@ -302,49 +302,40 @@ function AnnotationCard(props) {
   function handleCancel() { setSwiped(false); setConfirming(false); }
 
   return React.createElement('div', {
-    style: { position: 'relative', overflow: 'hidden', marginBottom: '8px' }
+    style: { overflow: 'hidden', marginBottom: '8px', position: 'relative' }
   },
-    /* Delete button behind */
-    React.createElement('div', {
-      style: {
-        position: 'absolute', right: 0, top: 0, bottom: 0,
-        display: 'flex', alignItems: 'stretch', gap: '1px'
-      }
-    },
-      React.createElement('button', {
-        onClick: handleCancel,
-        style: {
-          background: '#d4c4a8', border: 'none', color: '#a89478',
-          fontFamily: "'DotGothic16',monospace", fontSize: '9px',
-          letterSpacing: '2px', padding: '0 12px', cursor: 'pointer'
-        }
-      }, 'CANCEL'),
-      React.createElement('button', {
-        onClick: handleDeleteClick, disabled: deleting,
-        style: {
-          background: confirming ? '#8b2500' : '#b86840',
-          border: 'none', color: '#faf5e8',
-          fontFamily: "'DotGothic16',monospace", fontSize: '9px',
-          letterSpacing: '2px', padding: '0 16px', cursor: 'pointer',
-          transition: 'background 0.2s'
-        }
-      }, deleting ? '…' : confirming ? 'CONFIRM' : 'DELETE')
-    ),
-    /* Card content, slides left */
     React.createElement('div', {
       onTouchStart: handleTouchStart,
       onTouchEnd: handleTouchEnd,
-      className: 'ann-card',
       style: {
-        position: 'relative', marginBottom: 0,
+        display: 'flex',
         transform: swiped ? 'translateX(-120px)' : 'translateX(0)',
         transition: 'transform 0.25s cubic-bezier(.4,0,.2,1)',
-        cursor: 'grab'
+        width: 'calc(100% + 120px)'
       }
     },
-      React.createElement('div', { style: { fontStyle: 'italic', color: '#a89478', fontSize: '12px', lineHeight: 1.6, borderLeft: '2px solid #d4c4a8', paddingLeft: '10px', marginBottom: '8px' } }, '「' + (a.quote || '') + '」'),
-      React.createElement('div', { style: { fontSize: '13px', color: '#3d2e1f', lineHeight: 1.7 } }, a.note || a.text),
-      React.createElement('div', { className: 'label', style: { marginTop: '6px' } }, 'MOLLY · ' + time)
+      /* Card */
+      React.createElement('div', {
+        className: 'ann-card',
+        style: { flex: '0 0 100%', marginBottom: 0, boxSizing: 'border-box' }
+      },
+        React.createElement('div', { style: { fontStyle: 'italic', color: '#a89478', fontSize: '12px', lineHeight: 1.6, borderLeft: '2px solid #d4c4a8', paddingLeft: '10px', marginBottom: '8px' } }, '「' + (a.quote || '') + '」'),
+        React.createElement('div', { style: { fontSize: '13px', color: '#3d2e1f', lineHeight: 1.7 } }, a.note || a.text),
+        React.createElement('div', { className: 'label', style: { marginTop: '6px' } }, 'MOLLY · ' + time)
+      ),
+      /* Buttons */
+      React.createElement('div', {
+        style: { flex: '0 0 120px', display: 'flex', gap: '1px' }
+      },
+        React.createElement('button', {
+          onClick: handleCancel,
+          style: { flex: 1, background: '#d4c4a8', border: 'none', color: '#7a6a58', fontFamily: "'DotGothic16',monospace", fontSize: '9px', letterSpacing: '2px', cursor: 'pointer' }
+        }, 'CANCEL'),
+        React.createElement('button', {
+          onClick: handleDeleteClick, disabled: deleting,
+          style: { flex: 1, background: confirming ? '#8b2500' : '#b86840', border: 'none', color: '#faf5e8', fontFamily: "'DotGothic16',monospace", fontSize: '9px', letterSpacing: '2px', cursor: 'pointer', transition: 'background 0.2s' }
+        }, deleting ? '…' : confirming ? 'CONFIRM' : 'DELETE')
+      )
     )
   );
 }
