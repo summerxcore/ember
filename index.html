@@ -82,7 +82,7 @@ function api(path) {
   var headers = supabaseHeaders(cfg);
 
   if (path === '' || path === '/') {
-    return fetch(base + '/ember_entries?select=*,ember_annotations(id)&order=entry_date.desc', { headers: headers })
+    return fetch(base + '/ember_entries?select=*,ember_annotations(*)&order=entry_date.desc', { headers: headers })
       .then(function(r) { return r.json(); })
       .then(function(data) {
         if (!Array.isArray(data)) throw new Error(JSON.stringify(data));
@@ -270,7 +270,7 @@ function AnnotationCard(props) {
   return React.createElement('div', { className: 'ann-card' },
     React.createElement('div', { style: { fontStyle: 'italic', color: '#a89478', fontSize: '12px', lineHeight: 1.6, borderLeft: '2px solid #d4c4a8', paddingLeft: '10px', marginBottom: '8px' } }, '「' + (a.quote || '') + '」'),
     React.createElement('div', { style: { fontSize: '13px', color: '#3d2e1f', lineHeight: 1.7 } }, a.note || a.text),
-    React.createElement('div', { className: 'label', style: { marginTop: '6px' } }, 'Molly · ' + time)
+    React.createElement('div', { className: 'label', style: { marginTop: '6px' } }, 'IRIS · ' + time)
   );
 }
 
@@ -287,7 +287,7 @@ function EntryView(props) {
   useEffect(function() {
     setAnnotations(entry.annotations || []);
     setQuote(null);
-    if (entry.id && (!entry.annotations || entry.annotations.length === 0)) {
+    if (entry.id && (!entry.annotations || entry.annotations.length === 0 || !entry.annotations[0].note)) {
       api('/annotations?entry_id=' + entry.id).then(function(data) {
         if (Array.isArray(data)) setAnnotations(data);
       }).catch(function(e) { console.error(e); });
@@ -529,12 +529,12 @@ function App() {
           : React.createElement('div', { style: { textAlign: 'center', color: '#a89478', fontSize: '12px', padding: '60px 16px' } },
               React.createElement(NotebookIcon, { size: 32 }),
               React.createElement('div', { style: { marginTop: '16px' } }, 'No entries yet.'),
-              React.createElement('div', { style: { fontSize: '10px', marginTop: '8px', letterSpacing: '2px' } }, 'ASK Alisn TO WRITE THE FIRST ONE')
+              React.createElement('div', { style: { fontSize: '10px', marginTop: '8px', letterSpacing: '2px' } }, 'ASK LUX TO WRITE THE FIRST ONE')
             )
       ),
       !loading && page === 'log' && React.createElement(LogPage, { entries: entries, onSelect: function(e) { openDetail(e, 'log'); } }),
       !loading && page === 'words' && React.createElement(WordsPage, { entries: entries, onSelect: function(e) { openDetail(e, 'words'); } }),
-      React.createElement('div', { className: 'footer' }, 'EMBER · Alisn & Molly')
+      React.createElement('div', { className: 'footer' }, 'EMBER · LUX & IRIS')
     )
   );
 }
