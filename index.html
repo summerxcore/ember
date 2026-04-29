@@ -279,19 +279,20 @@ function AnnotationCard(props) {
   var _del = useState(false); var deleting = _del[0]; var setDeleting = _del[1];
   var _swiped = useState(false); var swiped = _swiped[0]; var setSwiped = _swiped[1];
   var _confirming = useState(false); var confirming = _confirming[0]; var setConfirming = _confirming[1];
-  var touchStartX = useRef(0);
-  var touchStartY = useRef(0);
+  var startX = useRef(0);
+  var startY = useRef(0);
+  var isDragging = useRef(false);
 
-  function handleTouchStart(e) {
-    touchStartX.current = e.touches[0].clientX;
-    touchStartY.current = e.touches[0].clientY;
+  function onStart(x, y) { startX.current = x; startY.current = y; isDragging.current = true; }
+  function onEnd(x, y) {
+    if (!isDragging.current) return;
+    isDragging.current = false;
+    var dx = startX.current - x;
+    var dy = Math.abs(startY.current - y);
+    if (dx > 40 && dy < 40) setSwiped(true);
+    if (dx < -20) { setSwiped(false); setConfirming(false); }
   }
-  function handleTouchEnd(e) {
-    var dx = touchStartX.current - e.changedTouches[0].clientX;
-    var dy = Math.abs(touchStartY.current - e.changedTouches[0].clientY);
-    if (dx > 50 && dy < 30) setSwiped(true);
-    if (dx < -30) { setSwiped(false); setConfirming(false); }
-  }
+
   function handleDeleteClick() {
     if (!confirming) { setConfirming(true); return; }
     setDeleting(true);
@@ -302,19 +303,23 @@ function AnnotationCard(props) {
   function handleCancel() { setSwiped(false); setConfirming(false); }
 
   return React.createElement('div', {
-    style: { overflow: 'hidden', marginBottom: '8px', position: 'relative' }
+    style: { overflow: 'hidden', marginBottom: '8px' }
   },
     React.createElement('div', {
-      onTouchStart: handleTouchStart,
-      onTouchEnd: handleTouchEnd,
+      onTouchStart: function(e) { onStart(e.touches[0].clientX, e.touches[0].clientY); },
+      onTouchEnd: function(e) { onEnd(e.changedTouches[0].clientX, e.changedTouches[0].clientY); },
+      onMouseDown: function(e) { onStart(e.clientX, e.clientY); },
+      onMouseUp: function(e) { onEnd(e.clientX, e.clientY); },
+      onMouseLeave: function(e) { if (isDragging.current) onEnd(e.clientX, e.clientY); },
       style: {
         display: 'flex',
         transform: swiped ? 'translateX(-120px)' : 'translateX(0)',
         transition: 'transform 0.25s cubic-bezier(.4,0,.2,1)',
-        width: 'calc(100% + 120px)'
+        width: 'calc(100% + 120px)',
+        userSelect: 'none',
+        cursor: swiped ? 'default' : 'grab'
       }
     },
-      /* Card */
       React.createElement('div', {
         className: 'ann-card',
         style: { flex: '0 0 100%', marginBottom: 0, boxSizing: 'border-box' }
@@ -323,10 +328,7 @@ function AnnotationCard(props) {
         React.createElement('div', { style: { fontSize: '13px', color: '#3d2e1f', lineHeight: 1.7 } }, a.note || a.text),
         React.createElement('div', { className: 'label', style: { marginTop: '6px' } }, 'MOLLY · ' + time)
       ),
-      /* Buttons */
-      React.createElement('div', {
-        style: { flex: '0 0 120px', display: 'flex', gap: '1px' }
-      },
+      React.createElement('div', { style: { flex: '0 0 120px', display: 'flex', gap: '1px' } },
         React.createElement('button', {
           onClick: handleCancel,
           style: { flex: 1, background: '#d4c4a8', border: 'none', color: '#7a6a58', fontFamily: "'DotGothic16',monospace", fontSize: '9px', letterSpacing: '2px', cursor: 'pointer' }
